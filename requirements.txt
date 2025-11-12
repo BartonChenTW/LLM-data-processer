@@ -1,0 +1,20 @@
+# Core dependencies for LLM Data Processer
+openai>=1.0.0
+jupyter>=1.0.0
+ipywidgets>=8.0.0
+huggingface-hub>=0.24.0
+pandas>=2.0.0
+transformers>=4.44.0
+
+# Optional: Install one of these for local model support
+# torch>=2.0.0 --index-url https://download.pytorch.org/whl/cpu
+# tensorflow>=2.0.0
+
+# Google Gemini support
+google-generativeai>=0.3.0
+
+# Documentation (optional, for contributors)
+# mkdocs>=1.5.0
+# mkdocs-material>=9.0.0
+
+
