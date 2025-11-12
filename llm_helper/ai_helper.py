@@ -27,21 +27,21 @@ class AIHelper():
         self.llm_models = llm_models
 
         self.chat_history = []
-        self.guideline = []
-        self.attached_data = []
+        self.guideline = {}
+        self.attached_data = {}
         self.display_response = display_response
 
         print(f"Initialized AIHelper with model: {self.model_name}")
 
-    def add_guideline(self, guideline: str):
+    def add_guideline(self, guideline_name: str, guideline: str):
         """Add a guideline to the chat."""
-        self.guideline.append(guideline)
-        print("Guideline added.")
+        self.guideline[guideline_name] = guideline
+        print(f"Guideline added: {guideline_name}")
 
-    def attach_data(self, attached_data: str):
+    def attach_data(self, data_name: str, attached_data: str):
         """Add data to the chat."""
-        self.attached_data.append(attached_data)
-        print("Data added.")
+        self.attached_data[data_name] = attached_data
+        print(f"Data added: {data_name}")
 
     def ask(self, prompt: str, display_response=None, with_guideline=True, with_data=True, with_history=True) -> str:
         """Generate text using the specified LLM model."""
@@ -51,18 +51,20 @@ class AIHelper():
 
         messages = []
 
+        ## --- create system message ---
         system_msg = ''
 
         # create data string from guideline
         if with_guideline and len(self.guideline) > 0:
-            system_msg += "[Guideline Start]\n"
-            system_msg += "\n\n".join(self.guideline)
-            system_msg += "\n[Guideline End]"
+            for key, guideline in self.guideline.items():
+                system_msg += f"[Guideline: {key} Start]\n"
+                system_msg += guideline + "\n"
+                system_msg += f"[Guideline: {key} End]\n\n"
 
         if with_data and len(self.attached_data) > 0:
             data_blocks = []
-            for df in self.attached_data:
-                data_blocks.append(f"[Data Start]\n{df.to_csv(index=False)}\n[Data End]")
+            for key, df in self.attached_data.items():
+                data_blocks.append(f"[Data: {key} Start]\n{df.to_csv(index=False)}\n[Data: {key} End]")
             system_msg += "\n\n".join(data_blocks)
 
         ## add system message if exists
