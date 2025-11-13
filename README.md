@@ -14,6 +14,7 @@ A Python library for seamlessly working with Large Language Models (LLMs) from m
 - 💬 **Interactive Chat Widget**: Built-in Jupyter notebook UI for chat interactions
 - 📊 **Data Integration**: Attach pandas DataFrames and query your data with LLMs
 - 📄 **PDF Processing**: Built-in utility to extract and analyze PDF documents
+- 🔍 **Structured Information Extraction**: InfoExtractor class for extracting structured data from text using custom schemas with retry logic
 - 📝 **Guideline System**: Add custom guidelines to steer model behavior
 - 🎨 **History Management**: Automatic conversation history tracking
 - 🔧 **Easy Configuration**: Simple initialization with sensible defaults
@@ -195,6 +196,35 @@ ai.ask("Compare it to JavaScript")  # Maintains conversation flow
 
 # View history
 print(ai.chat_history)
+```
+
+### Example 4: Structured Information Extraction
+
+```python
+from llm_helper import InfoExtractor
+
+# Initialize extractor with Gemini
+extractor = InfoExtractor(api_provider='google', model='gemini-2.5-flash')
+
+# Define data schema
+schema = {
+    'tech_type': 'StorageTechnology',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Technology name'},
+        'description': {'field_type': 'str', 'description': 'Brief description'},
+        'advantages': {'field_type': 'List[str]', 'description': 'Key advantages'},
+        'use_cases': {'field_type': 'List[str]', 'description': 'Common use cases'}
+    }
+}
+
+# Set up extraction
+extractor.load_data_schema(schema)
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+extractor.load_info_source("PostgreSQL", info_text)
+
+# Extract structured data with auto-retry on parsing errors
+result = extractor.extract_tech_info(max_retries=3)
+print(result.name, result.description)
 ```
 
 ## 📖 API Documentation

@@ -11,6 +11,7 @@ A Python library for seamlessly working with Large Language Models (LLMs) from m
 - 💬 **Interactive Chat Widget**: Built-in Jupyter notebook UI
 - 📊 **Data Integration**: Query pandas DataFrames with natural language
 - 📄 **PDF Processing**: Extract and analyze PDF documents
+- 🔍 **Structured Information Extraction**: Extract structured data with custom schemas and automatic retry logic
 - 📝 **Guideline System**: Custom guidelines to control model behavior
 - 🎨 **History Management**: Automatic conversation tracking
 - 🔧 **Easy Configuration**: Simple initialization with sensible defaults

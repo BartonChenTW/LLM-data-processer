@@ -34,6 +34,352 @@ text = read_pdf2text('document.pdf')
 print(f"Extracted {len(text)} characters")
 ```
 
+## InfoExtractor
+
+Class for extracting structured information from text using custom Pydantic schemas with automatic retry logic.
+
+### Constructor
+
+```python
+InfoExtractor(
+    api_provider: str = 'google',
+    model: str = 'gemini-2.5-flash',
+    path_env: str = ''
+)
+```
+
+**Parameters:**
+
+- `api_provider` (str, optional): LLM provider. Currently supports `'google'`. Default: `'google'`
+- `model` (str, optional): Model name. Default: `'gemini-2.5-flash'`
+- `path_env` (str, optional): Path to .env file. Default: `''`
+
+**Raises:**
+
+- `ValueError`: If unsupported API provider is specified
+
+**Example:**
+
+```python
+from llm_helper import InfoExtractor
+
+extractor = InfoExtractor(
+    api_provider='google',
+    model='gemini-2.5-flash'
+)
+```
+
+### Methods
+
+#### load_data_schema()
+
+Dynamically creates a Pydantic model based on provided schema data.
+
+```python
+load_data_schema(schema_data: Dict[str, Any]) -> BaseModel
+```
+
+**Parameters:**
+
+- `schema_data` (dict): Schema definition with `tech_type` and `fields`
+  - `tech_type` (str): Name for the Pydantic model
+  - `fields` (dict): Field definitions with `field_type` and `description`
+
+**Returns:**
+
+- `BaseModel`: Dynamically created Pydantic model class
+
+**Example:**
+
+```python
+schema = {
+    'tech_type': 'DatabaseInfo',
+    'fields': {
+        'name': {
+            'field_type': 'str',
+            'description': 'Database name'
+        },
+        'version': {
+            'field_type': 'str',
+            'description': 'Current version'
+        },
+        'features': {
+            'field_type': 'List[str]',
+            'description': 'Key features'
+        }
+    }
+}
+
+extractor.load_data_schema(schema)
+```
+
+**Supported Field Types:**
+
+- `str`: String fields
+- `int`: Integer fields
+- `float`: Floating point numbers
+- `bool`: Boolean fields
+- `List[str]`: List of strings
+- `List[int]`: List of integers
+- `Dict[str, str]`: String dictionaries
+
+#### load_prompt_templates()
+
+Load prompt templates for extraction and error fixing.
+
+```python
+load_prompt_templates(
+    base_prompt_dict: Dict[str, str],
+    fix_prompt_dict: Dict[str, str]
+) -> None
+```
+
+**Parameters:**
+
+- `base_prompt_dict` (dict): Initial extraction prompt with `system` and `human` keys
+- `fix_prompt_dict` (dict): Retry/fix prompt with `system` and `human` keys
+
+**Template Variables:**
+
+Base prompt:
+- `{technology_name}`: Name of item being extracted
+- `{info_source}`: Source text
+- `{format_instructions}`: Auto-generated Pydantic format
+
+Fix prompt:
+- `{technology_name}`: Name of item
+- `{malformed_output}`: Previous failed output
+- `{format_instructions}`: Expected format
+
+**Example:**
+
+```python
+base_prompts = {
+    'system': 'You are an expert at extracting structured data.',
+    'human': '''Extract information about {technology_name}:
+
+Source: {info_source}
+
+Format: {format_instructions}'''
+}
+
+fix_prompts = {
+    'system': 'You fix malformed JSON outputs.',
+    'human': '''Fix this output for {technology_name}:
+
+{malformed_output}
+
+Expected format: {format_instructions}'''
+}
+
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+```
+
+#### load_info_source()
+
+Load the information source and technology name for extraction.
+
+```python
+load_info_source(technology_name: str, info_source: str) -> None
+```
+
+**Parameters:**
+
+- `technology_name` (str): Name/identifier of the technology or entity
+- `info_source` (str): Source text to extract information from
+
+**Example:**
+
+```python
+info_text = """
+Redis is an in-memory data structure store...
+"""
+
+extractor.load_info_source('Redis', info_text)
+```
+
+#### validate_setup()
+
+Validates that all required components are configured before extraction.
+
+```python
+validate_setup() -> bool
+```
+
+**Returns:**
+
+- `bool`: `True` if all components are ready
+
+**Raises:**
+
+- `ValueError`: If any required component is missing, with detailed error messages
+
+**Validates:**
+
+- DataSchema is loaded
+- Parser is initialized
+- Base prompt is configured
+- Fix prompt is configured
+- Technology name is set
+- Info source is provided
+
+**Example:**
+
+```python
+try:
+    extractor.validate_setup()
+    print("✓ Setup complete")
+except ValueError as e:
+    print(f"Setup error: {e}")
+```
+
+#### extract_tech_info()
+
+Attempts to extract structured information with automatic retry on parsing errors.
+
+```python
+extract_tech_info(max_retries: int = 3) -> BaseModel
+```
+
+**Parameters:**
+
+- `max_retries` (int, optional): Maximum retry attempts for fixing malformed outputs. Default: `3`
+
+**Returns:**
+
+- `BaseModel`: Pydantic model instance with extracted data
+
+**Raises:**
+
+- `ValueError`: If setup validation fails
+- `OutputParserException`: If extraction fails after all retries
+
+**Workflow:**
+
+1. Validates setup
+2. Generates initial extraction using base prompt
+3. Attempts to parse JSON output
+4. On failure, uses fix prompt to correct output
+5. Retries up to `max_retries` times
+6. Returns validated Pydantic object
+
+**Example:**
+
+```python
+try:
+    result = extractor.extract_tech_info(max_retries=3)
+    
+    print(f"Name: {result.name}")
+    print(f"Description: {result.description}")
+    print(f"Features: {', '.join(result.features)}")
+    
+except OutputParserException as e:
+    print(f"Extraction failed: {e}")
+except ValueError as e:
+    print(f"Setup error: {e}")
+```
+
+### Attributes
+
+#### DataSchema
+
+```python
+DataSchema: Optional[BaseModel]
+```
+
+Dynamically created Pydantic model. Initially `None`, set by `load_data_schema()`.
+
+#### llm
+
+```python
+llm: ChatGoogleGenerativeAI
+```
+
+LangChain LLM instance for generation.
+
+#### parser
+
+```python
+parser: JsonOutputParser
+```
+
+JSON parser with Pydantic validation. Created by `load_data_schema()`.
+
+#### technology_name
+
+```python
+technology_name: str
+```
+
+Name of the entity being extracted. Set by `load_info_source()`.
+
+#### info_source
+
+```python
+info_source: str
+```
+
+Source text for extraction. Set by `load_info_source()`.
+
+#### base_prompt
+
+```python
+base_prompt: ChatPromptTemplate
+```
+
+LangChain prompt for initial extraction. Set by `load_prompt_templates()`.
+
+#### fix_prompt
+
+```python
+fix_prompt: ChatPromptTemplate
+```
+
+LangChain prompt for fixing malformed outputs. Set by `load_prompt_templates()`.
+
+### Complete Example
+
+```python
+from llm_helper import InfoExtractor
+
+# Initialize
+extractor = InfoExtractor(api_provider='google')
+
+# Define schema
+schema = {
+    'tech_type': 'StorageTechnology',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Technology name'},
+        'type': {'field_type': 'str', 'description': 'Storage type'},
+        'advantages': {'field_type': 'List[str]', 'description': 'Key benefits'},
+        'disadvantages': {'field_type': 'List[str]', 'description': 'Limitations'}
+    }
+}
+
+# Configure prompts
+base_prompts = {
+    'system': 'Extract structured storage technology information.',
+    'human': 'Extract data for {technology_name} from: {info_source}\n{format_instructions}'
+}
+
+fix_prompts = {
+    'system': 'Fix malformed JSON to match the schema.',
+    'human': 'Fix this: {malformed_output}\nFormat: {format_instructions}'
+}
+
+# Setup
+extractor.load_data_schema(schema)
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+
+# Extract
+info = "PostgreSQL is a powerful open-source relational database..."
+extractor.load_info_source('PostgreSQL', info)
+
+# Get structured result
+result = extractor.extract_tech_info(max_retries=3)
+print(f"✓ Extracted: {result.name} ({result.type})")
+```
+
 ## AIHelper
 
 Main class for interacting with Hugging Face models.
@@ -101,40 +447,48 @@ response = ai.ask("General question", with_guideline=False, with_data=False)
 Add a custom guideline to influence model behavior.
 
 ```python
-add_guideline(guideline: str) -> None
+add_guideline(guideline_name: str, guideline: str) -> None
 ```
 
 **Parameters:**
 
+- `guideline_name` (str): Unique name/key for the guideline
 - `guideline` (str): A string describing desired behavior
 
 **Example:**
 
 ```python
-ai.add_guideline("Respond in bullet points")
-ai.add_guideline("Keep responses under 100 words")
+ai.add_guideline('format', "Respond in bullet points")
+ai.add_guideline('length', "Keep responses under 100 words")
+ai.add_guideline('tone', "Use professional language")
 ```
 
 #### attach_data()
 
-Attach a pandas DataFrame to the AI context.
+Attach a pandas DataFrame or string data to the AI context.
 
 ```python
-attach_data(data: pd.DataFrame) -> None
+attach_data(data_name: str, attached_data: Union[pd.DataFrame, str]) -> None
 ```
 
 **Parameters:**
 
-- `data` (pd.DataFrame): DataFrame to attach
+- `data_name` (str): Unique name/key for the attached data
+- `attached_data` (pd.DataFrame or str): Data to attach (DataFrame or string)
 
 **Example:**
 
 ```python
 import pandas as pd
 
+# Attach DataFrame
 df = pd.DataFrame({"Name": ["Alice", "Bob"], "Age": [25, 30]})
-ai.attach_data(df)
-ai.ask("Who is older?")
+ai.attach_data('employees', df)
+
+# Attach string data
+ai.attach_data('context', "Company founded in 2020...")
+
+ai.ask("Who is older in the employee data?")
 ```
 
 #### chat_widget()
@@ -181,37 +535,39 @@ ai.chat_history = []
 #### guideline
 
 ```python
-guideline: List[str]
+guideline: Dict[str, str]
 ```
 
-List of custom guidelines.
+Dictionary of custom guidelines with name/key mapping to guideline text.
 
 **Example:**
 
 ```python
 # View guidelines
 print(ai.guideline)
+# Output: {'format': 'Respond in bullet points', 'length': 'Keep under 100 words'}
 
 # Clear guidelines
-ai.guideline = []
+ai.guideline = {}
 ```
 
 #### attached_data
 
 ```python
-attached_data: List[pd.DataFrame]
+attached_data: Dict[str, Union[pd.DataFrame, str]]
 ```
 
-List of attached DataFrames.
+Dictionary of attached data with name/key mapping to DataFrame or string data.
 
 **Example:**
 
 ```python
 # View attached data
-print(ai.attached_data)
+print(ai.attached_data.keys())
+# Output: dict_keys(['employees', 'sales_data'])
 
 # Clear data
-ai.attached_data = []
+ai.attached_data = {}
 ```
 
 #### llm_models

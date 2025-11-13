@@ -277,6 +277,194 @@ llm_models = {
 }
 ```
 
+## Structured Information Extraction
+
+The `InfoExtractor` class enables extraction of structured data from text sources using custom Pydantic schemas with automatic retry logic for parsing errors.
+
+### Basic Setup
+
+```python
+from llm_helper import InfoExtractor
+
+# Initialize with Gemini (currently only supported provider)
+extractor = InfoExtractor(
+    api_provider='google',
+    model='gemini-2.5-flash'
+)
+```
+
+### Define Data Schema
+
+```python
+# Define your schema with field types and descriptions
+schema_data = {
+    'tech_type': 'StorageTechnology',
+    'fields': {
+        'name': {
+            'field_type': 'str',
+            'description': 'The name of the storage technology'
+        },
+        'description': {
+            'field_type': 'str',
+            'description': 'A brief description of what it is'
+        },
+        'advantages': {
+            'field_type': 'List[str]',
+            'description': 'List of key advantages'
+        },
+        'disadvantages': {
+            'field_type': 'List[str]',
+            'description': 'List of main limitations'
+        },
+        'use_cases': {
+            'field_type': 'List[str]',
+            'description': 'Common use cases or applications'
+        }
+    }
+}
+
+# Load the schema
+extractor.load_data_schema(schema_data)
+```
+
+### Configure Prompts
+
+```python
+# Base prompt for initial extraction
+base_prompts = {
+    'system': 'You are an expert at extracting structured information.',
+    'human': '''Extract information about {technology_name} from the following source:
+
+{info_source}
+
+Return the data in this format:
+{format_instructions}'''
+}
+
+# Fix prompt for retry attempts
+fix_prompts = {
+    'system': 'You are an expert at fixing malformed JSON outputs.',
+    'human': '''The following output for {technology_name} has formatting errors:
+
+{malformed_output}
+
+Fix it to match this format:
+{format_instructions}'''
+}
+
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+```
+
+### Load Information Source
+
+```python
+# Provide the technology name and source text
+info_text = """
+PostgreSQL is an open-source relational database...
+[your source text here]
+"""
+
+extractor.load_info_source(
+    technology_name='PostgreSQL',
+    info_source=info_text
+)
+```
+
+### Extract Information
+
+```python
+# Extract with automatic retry on parsing errors
+try:
+    result = extractor.extract_tech_info(max_retries=3)
+    
+    # Access structured fields
+    print(f"Technology: {result.name}")
+    print(f"Description: {result.description}")
+    print(f"Advantages: {', '.join(result.advantages)}")
+    print(f"Use Cases: {', '.join(result.use_cases)}")
+    
+except Exception as e:
+    print(f"Extraction failed: {e}")
+```
+
+### Complete Example
+
+```python
+from llm_helper import InfoExtractor
+
+# Initialize
+extractor = InfoExtractor(api_provider='google')
+
+# Define schema
+schema = {
+    'tech_type': 'DatabaseTechnology',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Database name'},
+        'type': {'field_type': 'str', 'description': 'SQL or NoSQL'},
+        'features': {'field_type': 'List[str]', 'description': 'Key features'},
+        'pricing': {'field_type': 'str', 'description': 'Pricing model'}
+    }
+}
+
+# Configure
+extractor.load_data_schema(schema)
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+
+# Extract from multiple sources
+databases = ['MongoDB', 'Redis', 'Cassandra']
+results = []
+
+for db_name in databases:
+    # Get info from web, PDF, or other source
+    info = get_database_info(db_name)
+    
+    extractor.load_info_source(db_name, info)
+    result = extractor.extract_tech_info(max_retries=3)
+    results.append(result)
+
+# Process results
+for tech in results:
+    print(f"{tech.name}: {tech.type}")
+    print(f"Features: {', '.join(tech.features)}")
+```
+
+### Validation and Error Handling
+
+```python
+# Validate setup before extraction
+try:
+    extractor.validate_setup()
+    print("✓ All components configured correctly")
+except ValueError as e:
+    print(f"Setup error: {e}")
+
+# The validate_setup() checks for:
+# - DataSchema loaded
+# - Parser initialized
+# - Base prompt configured
+# - Fix prompt configured
+# - Technology name set
+# - Info source provided
+```
+
+### Advanced Schema Types
+
+```python
+# Complex nested schemas
+advanced_schema = {
+    'tech_type': 'CompanyProfile',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Company name'},
+        'founded_year': {'field_type': 'int', 'description': 'Year founded'},
+        'revenue': {'field_type': 'float', 'description': 'Annual revenue in millions'},
+        'products': {'field_type': 'List[str]', 'description': 'Main products'},
+        'is_public': {'field_type': 'bool', 'description': 'Publicly traded'},
+        'headquarters': {'field_type': 'str', 'description': 'HQ location'},
+        'employee_count': {'field_type': 'int', 'description': 'Number of employees'}
+    }
+}
+```
+
 ## Best Practices
 
 ### 1. Use Appropriate Models

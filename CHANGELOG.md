@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `InfoExtractor` class for structured information extraction
+  - Custom Pydantic schema support for defining data structures
+  - Automatic retry logic with malformed output fixing
+  - LangChain integration for robust JSON parsing
+  - Validation system to ensure proper setup before extraction
+  - Support for complex field types (str, int, float, bool, List, Dict)
+- PDF processing utilities
+  - `read_pdf2text()` function for extracting text from PDF documents
+  - Integration with pdfplumber for reliable PDF parsing
+  - LangChain text splitter support
+- Enhanced documentation
+  - InfoExtractor API reference with complete method documentation
+  - Structured extraction usage patterns and examples
+  - Batch processing examples for multiple documents
+  - PDF analysis examples
+- New example scripts
+  - `examples/info_extractor_usage.py` with 4 comprehensive examples
+
+### Changed
+- **BREAKING**: `AIHelper.add_guideline()` now requires `guideline_name` parameter
+  - Old: `ai.add_guideline("Use bullet points")`
+  - New: `ai.add_guideline('format', "Use bullet points")`
+- **BREAKING**: `AIHelper.attach_data()` now requires `data_name` parameter
+  - Old: `ai.attach_data(df)`
+  - New: `ai.attach_data('employees', df)`
+- `AIHelper.guideline` changed from `List[str]` to `Dict[str, str]`
+- `AIHelper.attached_data` changed from `List[pd.DataFrame]` to `Dict[str, Union[pd.DataFrame, str]]`
+- `AIHelper.attach_data()` now supports both DataFrame and string data types
+
+### Fixed
+- Chat widget input now clears after sending message
+- Improved error handling in InfoExtractor with detailed validation messages
+
 ### Planned
 - Streaming response support
 - Additional LLM providers (Anthropic, Cohere)

@@ -139,7 +139,7 @@ df = pd.DataFrame({
 
 # Initialize AI and attach data
 ai = AIHelper(model_name='Llama-3.1', display_response=False)
-ai.attach_data(df)
+ai.attach_data('employees', df)
 
 # Query the data
 print("Question: Who has the highest salary?")
@@ -175,8 +175,8 @@ df_satisfaction = pd.DataFrame({
 
 # Attach both datasets
 ai = AIHelper(model_name='Llama-3.1', display_response=False)
-ai.attach_data(df_sales)
-ai.attach_data(df_satisfaction)
+ai.attach_data('sales', df_sales)
+ai.attach_data('satisfaction', df_satisfaction)
 
 # Cross-dataset analysis
 question = "Considering both revenue and customer ratings, which product should we focus on?"
@@ -194,9 +194,9 @@ from llm_helper import AIHelper
 ai = AIHelper(model_name='Llama-3.1', display_response=False)
 
 # Add formatting guidelines
-ai.add_guideline("Always respond in bullet points")
-ai.add_guideline("Keep each point under 20 words")
-ai.add_guideline("Provide exactly 5 points")
+ai.add_guideline('format', "Always respond in bullet points")
+ai.add_guideline('length', "Keep each point under 20 words")
+ai.add_guideline('count', "Provide exactly 5 points")
 
 response = ai.ask("What are the benefits of Python?")
 print(response)
@@ -208,10 +208,10 @@ print(response)
 ai = AIHelper(model_name='Llama-3.1', display_response=False)
 
 # Business-oriented guidelines
-ai.add_guideline("Structure: Executive Summary, Analysis, Recommendation")
-ai.add_guideline("Focus on ROI and business value")
-ai.add_guideline("Use non-technical language")
-ai.add_guideline("Keep under 200 words")
+ai.add_guideline('structure', "Structure: Executive Summary, Analysis, Recommendation")
+ai.add_guideline('focus', "Focus on ROI and business value")
+ai.add_guideline('language', "Use non-technical language")
+ai.add_guideline('length', "Keep under 200 words")
 
 response = ai.ask("Should our company adopt AI technology?")
 print(response)
@@ -223,9 +223,9 @@ print(response)
 ai = AIHelper(model_name='Llama-3.1', display_response=False)
 
 # Technical writing guidelines
-ai.add_guideline("Include code examples")
-ai.add_guideline("Explain with technical depth")
-ai.add_guideline("Structure: Definition → Example → Use Case")
+ai.add_guideline('code', "Include code examples")
+ai.add_guideline('depth', "Explain with technical depth")
+ai.add_guideline('structure', "Structure: Definition → Example → Use Case")
 
 response = ai.ask("Explain Python decorators")
 print(response)
@@ -235,7 +235,7 @@ print(response)
 
 ```python
 ai = AIHelper(model_name='Llama-3.1', display_response=False)
-ai.add_guideline("Respond in haiku format (5-7-5 syllables)")
+ai.add_guideline('format', "Respond in haiku format (5-7-5 syllables)")
 
 # With guideline (haiku)
 print("With Guideline:")
@@ -324,9 +324,9 @@ df = pd.DataFrame({
 })
 
 ai = AIHelper(model_name='Llama-3.1')
-ai.attach_data(df)
-ai.add_guideline("Focus on data-driven insights")
-ai.add_guideline("Provide comparisons when relevant")
+ai.attach_data('city_data', df)
+ai.add_guideline('focus', "Focus on data-driven insights")
+ai.add_guideline('compare', "Provide comparisons when relevant")
 
 # Launch widget with context
 ai.chat_widget()
@@ -410,7 +410,7 @@ from llm_helper import AIHelper
 def analyze_dataframe(df: pd.DataFrame, questions: list) -> dict:
     """Analyze a DataFrame using AI."""
     ai = AIHelper(model_name='Llama-3.1', display_response=False)
-    ai.attach_data(df)
+    ai.attach_data('analysis_data', df)
     
     results = {}
     for question in questions:
@@ -427,6 +427,318 @@ results = analyze_dataframe(df, questions)
 for q, a in results.items():
     print(f"Q: {q}")
     print(f"A: {a}\n")
+```
+
+## Structured Information Extraction Examples
+
+### Basic Entity Extraction
+
+```python
+from llm_helper import InfoExtractor
+
+# Initialize extractor
+extractor = InfoExtractor(api_provider='google', model='gemini-2.5-flash')
+
+# Define schema for company information
+company_schema = {
+    'tech_type': 'CompanyInfo',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Company name'},
+        'founded_year': {'field_type': 'int', 'description': 'Year founded'},
+        'industry': {'field_type': 'str', 'description': 'Primary industry'},
+        'products': {'field_type': 'List[str]', 'description': 'Main products/services'},
+        'headquarters': {'field_type': 'str', 'description': 'HQ location'}
+    }
+}
+
+# Setup prompts
+base_prompts = {
+    'system': 'You are an expert at extracting structured company information.',
+    'human': '''Extract company information for {technology_name} from:
+
+{info_source}
+
+Format: {format_instructions}'''
+}
+
+fix_prompts = {
+    'system': 'You fix malformed JSON to match company information schema.',
+    'human': '''Fix this output for {technology_name}:
+
+{malformed_output}
+
+Expected format: {format_instructions}'''
+}
+
+# Configure extractor
+extractor.load_data_schema(company_schema)
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+
+# Extract from source
+company_info = """
+Tesla, Inc. was founded in 2003 and is headquartered in Austin, Texas.
+The company produces electric vehicles, battery energy storage, and solar panels.
+"""
+
+extractor.load_info_source('Tesla', company_info)
+result = extractor.extract_tech_info(max_retries=3)
+
+# Display results
+print(f"Company: {result.name}")
+print(f"Founded: {result.founded_year}")
+print(f"Industry: {result.industry}")
+print(f"Products: {', '.join(result.products)}")
+print(f"Headquarters: {result.headquarters}")
+```
+
+### Technology Comparison Extraction
+
+```python
+from llm_helper import InfoExtractor
+
+# Schema for storage technologies
+storage_schema = {
+    'tech_type': 'StorageTechnology',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Technology name'},
+        'type': {'field_type': 'str', 'description': 'Type (e.g., relational, document, key-value)'},
+        'description': {'field_type': 'str', 'description': 'Brief description'},
+        'advantages': {'field_type': 'List[str]', 'description': 'Key advantages'},
+        'disadvantages': {'field_type': 'List[str]', 'description': 'Main limitations'},
+        'use_cases': {'field_type': 'List[str]', 'description': 'Common use cases'},
+        'scalability': {'field_type': 'str', 'description': 'Scalability characteristics'}
+    }
+}
+
+# Setup extractor
+extractor = InfoExtractor(api_provider='google')
+extractor.load_data_schema(storage_schema)
+
+base_prompts = {
+    'system': 'Extract detailed storage technology information.',
+    'human': 'Analyze {technology_name}: {info_source}\n{format_instructions}'
+}
+
+fix_prompts = {
+    'system': 'Fix JSON output to match storage technology schema.',
+    'human': 'Fix: {malformed_output}\nFormat: {format_instructions}'
+}
+
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+
+# Extract multiple technologies
+technologies = {
+    'PostgreSQL': "PostgreSQL is a powerful open-source relational database...",
+    'MongoDB': "MongoDB is a document-oriented NoSQL database...",
+    'Redis': "Redis is an in-memory key-value data store..."
+}
+
+results = []
+for tech_name, tech_info in technologies.items():
+    extractor.load_info_source(tech_name, tech_info)
+    result = extractor.extract_tech_info(max_retries=3)
+    results.append(result)
+
+# Compare results
+print("Technology Comparison:")
+for tech in results:
+    print(f"\n{tech.name} ({tech.type})")
+    print(f"  Advantages: {', '.join(tech.advantages[:2])}...")
+    print(f"  Best for: {', '.join(tech.use_cases[:2])}...")
+```
+
+### PDF Document Extraction
+
+```python
+from llm_helper import InfoExtractor, read_pdf2text
+
+# Extract text from PDF
+pdf_content = read_pdf2text('product_spec.pdf')
+
+# Define product specification schema
+product_schema = {
+    'tech_type': 'ProductSpecification',
+    'fields': {
+        'product_name': {'field_type': 'str', 'description': 'Product name'},
+        'model_number': {'field_type': 'str', 'description': 'Model/version number'},
+        'features': {'field_type': 'List[str]', 'description': 'Key features'},
+        'specifications': {'field_type': 'Dict[str, str]', 'description': 'Technical specs'},
+        'price_range': {'field_type': 'str', 'description': 'Price range'},
+        'warranty': {'field_type': 'str', 'description': 'Warranty information'}
+    }
+}
+
+# Setup and extract
+extractor = InfoExtractor(api_provider='google')
+extractor.load_data_schema(product_schema)
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+extractor.load_info_source('Product XYZ', pdf_content)
+
+product_info = extractor.extract_tech_info(max_retries=3)
+
+print(f"Product: {product_info.product_name} ({product_info.model_number})")
+print(f"Features: {', '.join(product_info.features)}")
+print(f"Price: {product_info.price_range}")
+```
+
+### Research Paper Analysis
+
+```python
+from llm_helper import InfoExtractor
+
+# Schema for academic papers
+paper_schema = {
+    'tech_type': 'ResearchPaper',
+    'fields': {
+        'title': {'field_type': 'str', 'description': 'Paper title'},
+        'authors': {'field_type': 'List[str]', 'description': 'Author names'},
+        'year': {'field_type': 'int', 'description': 'Publication year'},
+        'abstract': {'field_type': 'str', 'description': 'Brief summary'},
+        'methodology': {'field_type': 'str', 'description': 'Research methodology'},
+        'key_findings': {'field_type': 'List[str]', 'description': 'Main findings'},
+        'limitations': {'field_type': 'List[str]', 'description': 'Study limitations'},
+        'future_work': {'field_type': 'str', 'description': 'Suggested future research'}
+    }
+}
+
+# Configure
+extractor = InfoExtractor(api_provider='google')
+extractor.load_data_schema(paper_schema)
+
+base_prompts = {
+    'system': 'Extract structured research paper information.',
+    'human': 'Extract from {technology_name}:\n{info_source}\n{format_instructions}'
+}
+
+fix_prompts = {
+    'system': 'Fix JSON to match research paper schema.',
+    'human': 'Fix: {malformed_output}\nFormat: {format_instructions}'
+}
+
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+
+# Extract from paper abstract/content
+paper_content = """
+Title: Deep Learning for Natural Language Processing
+Authors: John Smith, Jane Doe, Bob Wilson
+Published: 2024
+
+Abstract: This paper explores transformer architectures...
+"""
+
+extractor.load_info_source('NLP Research Paper', paper_content)
+paper = extractor.extract_tech_info(max_retries=3)
+
+print(f"Title: {paper.title}")
+print(f"Authors: {', '.join(paper.authors)}")
+print(f"Year: {paper.year}")
+print(f"Key Findings:")
+for finding in paper.key_findings:
+    print(f"  - {finding}")
+```
+
+### Error Handling with Validation
+
+```python
+from llm_helper import InfoExtractor
+from langchain_core.exceptions import OutputParserException
+
+extractor = InfoExtractor(api_provider='google')
+
+# Define schema
+schema = {
+    'tech_type': 'DatabaseInfo',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Database name'},
+        'type': {'field_type': 'str', 'description': 'Database type'}
+    }
+}
+
+extractor.load_data_schema(schema)
+extractor.load_prompt_templates(base_prompts, fix_prompts)
+
+# Validate setup before extraction
+try:
+    extractor.validate_setup()
+    print("✓ Setup validated successfully")
+except ValueError as e:
+    print(f"Setup validation failed: {e}")
+    exit(1)
+
+# Extract with error handling
+extractor.load_info_source('MySQL', "MySQL is a relational database...")
+
+try:
+    result = extractor.extract_tech_info(max_retries=3)
+    print(f"✓ Successfully extracted: {result.name} ({result.type})")
+except OutputParserException as e:
+    print(f"✗ Extraction failed after retries: {e}")
+except Exception as e:
+    print(f"✗ Unexpected error: {e}")
+```
+
+### Batch Extraction Pipeline
+
+```python
+from llm_helper import InfoExtractor
+from typing import List, Dict
+
+def batch_extract_technologies(
+    tech_data: Dict[str, str],
+    schema: dict,
+    max_retries: int = 3
+) -> List:
+    """Extract structured info from multiple sources."""
+    
+    extractor = InfoExtractor(api_provider='google')
+    extractor.load_data_schema(schema)
+    
+    # Configure prompts
+    base_prompts = {
+        'system': 'Extract structured technology information.',
+        'human': 'Extract {technology_name} from: {info_source}\n{format_instructions}'
+    }
+    fix_prompts = {
+        'system': 'Fix malformed JSON.',
+        'human': 'Fix: {malformed_output}\nFormat: {format_instructions}'
+    }
+    extractor.load_prompt_templates(base_prompts, fix_prompts)
+    
+    results = []
+    for name, info in tech_data.items():
+        try:
+            extractor.load_info_source(name, info)
+            result = extractor.extract_tech_info(max_retries=max_retries)
+            results.append(result)
+            print(f"✓ Extracted: {name}")
+        except Exception as e:
+            print(f"✗ Failed for {name}: {e}")
+    
+    return results
+
+# Define schema
+tech_schema = {
+    'tech_type': 'TechnologyProfile',
+    'fields': {
+        'name': {'field_type': 'str', 'description': 'Technology name'},
+        'category': {'field_type': 'str', 'description': 'Category'},
+        'features': {'field_type': 'List[str]', 'description': 'Key features'}
+    }
+}
+
+# Batch process
+tech_sources = {
+    'Docker': "Docker is a containerization platform...",
+    'Kubernetes': "Kubernetes is an orchestration system...",
+    'Jenkins': "Jenkins is a CI/CD automation server..."
+}
+
+results = batch_extract_technologies(tech_sources, tech_schema)
+
+# Display results
+for tech in results:
+    print(f"\n{tech.name} - {tech.category}")
+    print(f"Features: {', '.join(tech.features)}")
 ```
 
 ## Complete Application Example
@@ -447,12 +759,12 @@ def main():
     ai = AIHelper(model_name='Llama-3.1', display_response=False)
     
     # Configure behavior
-    ai.add_guideline("Provide actionable insights")
-    ai.add_guideline("Use data to support conclusions")
-    ai.add_guideline("Structure: Finding → Evidence → Recommendation")
+    ai.add_guideline('insights', "Provide actionable insights")
+    ai.add_guideline('support', "Use data to support conclusions")
+    ai.add_guideline('structure', "Structure: Finding → Evidence → Recommendation")
     
     # Attach data
-    ai.attach_data(df)
+    ai.attach_data('dataset', df)
     
     # Generate report
     report = ai.ask("""

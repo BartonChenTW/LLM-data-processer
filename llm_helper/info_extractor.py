@@ -157,7 +157,7 @@ class InfoExtractor():
                 fix_chain = self.fix_prompt | self.llm
                 
                 fix_response = fix_chain.invoke({
-                    "technology_name": technology_name, 
+                    "technology_name": self.technology_name, 
                     "format_instructions": self.parser.get_format_instructions(),
                     "malformed_output": json_output 
                 })
