@@ -10,6 +10,7 @@ A Python library for seamlessly working with Large Language Models (LLMs) from m
 - 🤖 **Multi-Provider Support**: Hugging Face, Google Gemini, OpenAI
 - 💬 **Interactive Chat Widget**: Built-in Jupyter notebook UI
 - 📊 **Data Integration**: Query pandas DataFrames with natural language
+- 📄 **PDF Processing**: Extract and analyze PDF documents
 - 📝 **Guideline System**: Custom guidelines to control model behavior
 - 🎨 **History Management**: Automatic conversation tracking
 - 🔧 **Easy Configuration**: Simple initialization with sensible defaults

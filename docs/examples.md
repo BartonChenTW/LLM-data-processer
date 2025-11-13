@@ -52,6 +52,74 @@ response3 = ai.ask("Give me a simple example")  # Builds on conversation
 print(f"A3: {response3}")
 ```
 
+## PDF Document Analysis Examples
+
+### Basic PDF Extraction
+
+```python
+from llm_helper import AIHelper, read_pdf2text
+
+# Read PDF
+pdf_text = read_pdf2text('./reports/annual_report.pdf')
+
+# Setup AI
+ai = AIHelper(model_name='Llama-3.1', display_response=False)
+ai.attach_data('Annual Report', pdf_text)
+
+# Query document
+print("Q: What are the key highlights?")
+response = ai.ask("Summarize the key highlights from this annual report", with_history=False)
+print(f"A: {response}\n")
+
+print("Q: What were the financial results?")
+response = ai.ask("What were the financial results?", with_history=False)
+print(f"A: {response}")
+```
+
+### Multi-Document Analysis
+
+```python
+from llm_helper import AIHelper, read_pdf2text
+import os
+
+# Read multiple PDFs
+pdf_dir = './research_papers/'
+pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
+
+ai = AIHelper(model_name='Llama-3.1', display_response=False)
+
+# Attach all PDFs
+for pdf_file in pdf_files:
+    pdf_path = os.path.join(pdf_dir, pdf_file)
+    text = read_pdf2text(pdf_path)
+    ai.attach_data(f'Paper: {pdf_file}', text)
+
+# Comparative analysis
+response = ai.ask("Compare the methodologies across all papers", with_history=False)
+print(response)
+```
+
+### PDF with Custom Guidelines
+
+```python
+from llm_helper import AIHelper, read_pdf2text
+
+ai = AIHelper(model_name='Llama-3.1', display_response=False)
+
+# Add analysis guidelines
+ai.add_guideline("Extract only factual information")
+ai.add_guideline("Cite page numbers when possible")
+ai.add_guideline("Structure: Finding → Evidence → Implication")
+
+# Attach PDF
+pdf_text = read_pdf2text('technical_spec.pdf')
+ai.attach_data('Technical Specification', pdf_text)
+
+# Structured query
+response = ai.ask("What are the system requirements?", with_history=False)
+print(response)
+```
+
 ## Data Analysis Examples
 
 ### Employee Data Analysis

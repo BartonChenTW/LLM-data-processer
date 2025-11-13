@@ -34,6 +34,42 @@ answer = ai_script.ask("What is 2+2?")
 print(answer)
 ```
 
+## PDF Document Processing
+
+### Extract and Analyze PDFs
+
+```python
+from llm_helper import AIHelper, read_pdf2text
+
+# Extract text from PDF
+pdf_text = read_pdf2text('research_paper.pdf')
+
+# Initialize AI and attach PDF content
+ai = AIHelper(model_name='Llama-3.1')
+ai.attach_data('Research Paper', pdf_text)
+
+# Query the document
+ai.ask('What are the key findings?')
+ai.ask('Summarize the methodology')
+ai.ask('List all references mentioned')
+```
+
+### Using with pdfplumber directly
+
+```python
+import pdfplumber
+from llm_helper import AIHelper
+
+pdf_text = ""
+with pdfplumber.open('document.pdf') as pdf:
+    for page in pdf.pages:
+        pdf_text += page.extract_text() + "\n"
+
+ai = AIHelper()
+ai.attach_data('PDF', pdf_text)
+ai.ask('Analyze this document')
+```
+
 ## Data Integration
 
 ### Attach DataFrames

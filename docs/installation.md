@@ -42,7 +42,9 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Install PyTorch (Optional)
+### 4. Install Optional Dependencies
+
+#### PyTorch (for local models)
 
 For local model support, install PyTorch:
 
@@ -55,6 +57,23 @@ For local model support, install PyTorch:
     ```bash
     pip install torch torchvision torchaudio
     ```
+
+#### PDF Processing
+
+PDF support is already included in requirements.txt:
+
+```bash
+# Already installed with requirements.txt
+pdfplumber>=0.10.0
+```
+
+#### LangChain (for advanced document processing)
+
+For document splitting and advanced RAG workflows:
+
+```bash
+pip install langchain langchain-community pypdf
+```
 
 ### 5. Install as Package (Optional)
 

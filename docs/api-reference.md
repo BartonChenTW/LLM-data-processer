@@ -2,6 +2,38 @@
 
 Complete reference for all classes and methods in LLM Data Processer.
 
+## Utility Functions
+
+### read_pdf2text()
+
+Extract text content from a PDF file.
+
+```python
+read_pdf2text(pdf_path: str) -> str
+```
+
+**Parameters:**
+
+- `pdf_path` (str): Path to the PDF file
+
+**Returns:**
+
+- `str`: Extracted text from all pages
+
+**Raises:**
+
+- `FileNotFoundError`: If PDF file doesn't exist
+- `PDFSyntaxError`: If PDF is corrupted
+
+**Example:**
+
+```python
+from llm_helper import read_pdf2text
+
+text = read_pdf2text('document.pdf')
+print(f"Extracted {len(text)} characters")
+```
+
 ## AIHelper
 
 Main class for interacting with Hugging Face models.
