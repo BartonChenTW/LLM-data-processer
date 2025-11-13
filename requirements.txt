@@ -13,6 +13,14 @@ transformers>=4.44.0
 # Google Gemini support
 google-generativeai>=0.3.0
 
+# PDF processing
+pdfplumber>=0.10.0
+
+# LangChain for advanced document processing (optional)
+langchain>=0.1.0
+langchain-community>=0.0.20
+pypdf>=3.0.0
+
 # Documentation (optional, for contributors)
 # mkdocs>=1.5.0
 # mkdocs-material>=9.0.0

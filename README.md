@@ -4,6 +4,9 @@ A Python library for seamlessly working with Large Language Models (LLMs) from m
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-online-brightgreen.svg)](https://bartonchentw.github.io/LLM-data-processer/)
+
+📖 **[Documentation](https://bartonchentw.github.io/LLM-data-processer/)** | 🚀 **[Quick Start](#quick-start)** | 📚 **[Examples](#usage-examples)**
 
 ## ✨ Features
 

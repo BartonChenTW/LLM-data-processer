@@ -3,6 +3,7 @@
 from huggingface_hub import InferenceClient
 from IPython.display import display, Markdown
 import ipywidgets as widgets
+import pandas as pd
 import os
 
 
@@ -38,10 +39,16 @@ class AIHelper():
         self.guideline[guideline_name] = guideline
         print(f"Guideline added: {guideline_name}")
 
-    def attach_data(self, data_name: str, attached_data: str):
+    def attach_data(self, data_name: str, attached_data):
         """Add data to the chat."""
-        self.attached_data[data_name] = attached_data
-        print(f"Data added: {data_name}")
+
+        if type(attached_data) == pd.DataFrame:
+            str_data = attached_data.to_csv()
+        else:
+            str_data = str(attached_data)
+
+        self.attached_data[data_name] = str_data
+        print(f"Data added: {data_name}; data type: {type(attached_data)}; data size: {len(str_data)} characters")
 
     def ask(self, prompt: str, display_response=None, with_guideline=True, with_data=True, with_history=True) -> str:
         """Generate text using the specified LLM model."""
@@ -54,17 +61,19 @@ class AIHelper():
         ## --- create system message ---
         system_msg = ''
 
-        # create data string from guideline
+        # add system message from guideline
         if with_guideline and len(self.guideline) > 0:
             for key, guideline in self.guideline.items():
                 system_msg += f"[Guideline: {key} Start]\n"
                 system_msg += guideline + "\n"
                 system_msg += f"[Guideline: {key} End]\n\n"
 
+        # add system message from data attachments
         if with_data and len(self.attached_data) > 0:
             data_blocks = []
-            for key, df in self.attached_data.items():
-                data_blocks.append(f"[Data: {key} Start]\n{df.to_csv(index=False)}\n[Data: {key} End]")
+            for key, str_data in self.attached_data.items():
+                data_blocks.append(f"[Data: {key} Start]\n{str_data}\n[Data: {key} End]")
+
             system_msg += "\n\n".join(data_blocks)
 
         ## add system message if exists
